@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-asv-nodes"
+description = "ComfyUI-ASV-Nodes make prompting easier."
+version = "1.0.0"
+license = {file = "LICENSE"}
+dependencies = ["transformers==4.43.2"]
+
+[project.urls]
+Repository = "https://github.com/zubenelakrab/ComfyUI-ASV-Nodes"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "zubenelakrab"
+DisplayName = "ComfyUI-ASV-Nodes"
+Icon = ""
