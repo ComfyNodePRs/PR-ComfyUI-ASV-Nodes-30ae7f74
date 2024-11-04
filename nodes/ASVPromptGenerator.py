@@ -32,7 +32,7 @@ class TextGenerator:
     def format_prompt(self, raw_text, initial_seed):
         return raw_text, initial_seed, "", "", ""
 
-    def create_prompt(self, initial_seed, prompt, sampling, temperature, top_k, top_p):
+    def create_prompt(self, initial_seed, enabled, prompt, sampling, temperature, top_k, top_p, notes):
 
         kwargs = locals()
         del kwargs["self"]
@@ -41,27 +41,24 @@ class TextGenerator:
         if seed is not None:
             self.randomizer = random.Random(seed)
 
-        elements = []
+        
         prompt = kwargs.get("prompt", "")
-        elements.append(prompt)
+        
+        if enabled: 
+            input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to("cuda")
+            outputs = model.generate(
+                input_ids,
+                max_new_tokens=1000,
+                do_sample=sampling,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p,
+            )
 
-        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to("cuda")
-        outputs = model.generate(
-            input_ids,
-            max_new_tokens=1000,
-            do_sample=sampling,
-            temperature=temperature,
-            top_k=top_k,
-            top_p=top_p,
-        )
-
-        return self.format_prompt(
-            self.sanitize_string(
-                tokenizer.decode(outputs[0], skip_special_tokens=True)
-            ),
-            initial_seed,
-        )
-
+            generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            return self.format_prompt(self.sanitize_string(generated_text), initial_seed)
+        else:
+            return self.format_prompt(self.sanitize_string(prompt), initial_seed)
 
 class ASVPromptGenerator:
     @classmethod
@@ -77,6 +74,7 @@ class ASVPromptGenerator:
                         "step": 1,
                     },
                 ),
+                "enabled": ("BOOLEAN", {"default": True}),
                 "prompt": ("STRING", {"multiline": True, "default": ""}),
                 "sampling": ("BOOLEAN", {"default": True}),
                 "temperature": (
@@ -123,10 +121,10 @@ class ASVPromptGenerator:
     FUNCTION = "execute"
     CATEGORY = "Prompt"
 
-    def execute(self, seed, prompt, sampling, temperature, top_k, top_p):
+    def execute(self, seed, enabled, prompt, sampling, temperature, top_k, top_p, notes):
         generator = TextGenerator(seed)
         prompt = generator.create_prompt(
-            seed, prompt, sampling, temperature, top_k, top_p
+            seed, enabled, prompt, sampling, temperature, top_k, top_p, notes
         )
         return prompt
 
